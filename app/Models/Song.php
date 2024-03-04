@@ -16,4 +16,16 @@ class Song extends Model
         'file',
         'image'
     ];
+    protected $appends = ['file_data' ,'image_data'];  //Mutator
+
+    public function getImageDataAttribute() {
+        return url($this->image);
+    }
+
+
+    public function getFileDataAttribute(){
+        return url($this->file);
+    }
+   
+
 }

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\SongsController;
+use App\Http\Controllers\TestController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -17,8 +19,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function () {
 Route::post('updateProfile', [UserController::class, 'updateProfile']);
+Route::post('uploadSong',[SongsController::class,'upload']);
+Route::get('getallsongs',[SongsController::class,'getAllSongs']);
    
 });
 
 Route::post('register', [UserController::class, 'register']);
+
+Route::post('test',[TestController::class,"index"]);
 
