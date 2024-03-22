@@ -27,4 +27,6 @@ Route::get('getallsongs',[SongsController::class,'getAllSongs']);
 Route::post('register', [UserController::class, 'register']);
 
 Route::post('test',[TestController::class,"index"]);
+Route::post('search', [SongsController::class, 'search']);
+
 

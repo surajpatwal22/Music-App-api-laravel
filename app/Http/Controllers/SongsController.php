@@ -65,6 +65,31 @@ class SongsController extends Controller
                 "songs" => $songs
             ],200);
         }
+
+        public function search(Request $request)
+        {
+            try {
+                $keyword = $request->input('keyword');
+        
+                $songs = Song::where('title', 'like', "%$keyword%")->get();
+        
+                $message = $keyword ? 'Search results for "' . $keyword . '"' : 'Search results';
+        
+                return response()->json([
+                    'message' => $message,
+                    'status' => 200,
+                    'results' => [
+                        'songs' => $songs,
+                    ]
+                ], 200);
+            } catch (Exception $e) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'status' => 400,
+                ], 400);
+            }
+        }
+        
     
 
 }
