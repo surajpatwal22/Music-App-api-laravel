@@ -12,9 +12,17 @@ class Song extends Model
     protected $fillable = [
         'title',
         'subtitle',
-        'artistname',
         'file',
-        'image'
+        'image',
+        'status',
+        'singer_id',
+        'album_id',
+        'playlist_id',
+        'mood_id',
+        'language_id',
+        'genre_id',
+        'music_director_id',
+        'year',
     ];
     protected $appends = ['file_data' ,'image_data'];  //Mutator
 
@@ -25,6 +33,17 @@ class Song extends Model
 
     public function getFileDataAttribute(){
         return url($this->file);
+    }
+
+    public function genre()
+    {
+        return $this->belongsTo(Genre::class);
+    }
+
+    public function album()
+    {
+        return $this->belongsTo(Album::class);
+
     }
    
 

@@ -5,6 +5,7 @@ use App\Http\Controllers\TestController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\GenreController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,5 +29,25 @@ Route::post('register', [UserController::class, 'register']);
 
 Route::post('test',[TestController::class,"index"]);
 Route::post('search', [SongsController::class, 'search']);
+//  album
+Route::post('albums', [AlbumController::class, 'store']);
+Route::put('albums/{id}', [AlbumController::class, 'update']);
+Route::delete('albums/{id}', [AlbumController::class, 'destroy']);
+Route::get('albums', [AlbumController::class, 'getAllAlbum']);
+Route::get('albums/{id}', [AlbumController::class, 'getAlbum']);
+
+//  genre
+Route::post('genres', [GenreController::class, 'store']);
+Route::put('genres/{id}', [GenreController::class, 'update']);
+Route::delete('genres/{id}', [GenreController::class, 'destroy']);
+
+
+
+
+
+
+
+
+
 
 
