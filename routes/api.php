@@ -41,7 +41,18 @@ Route::post('genres', [GenreController::class, 'store']);
 Route::put('genres/{id}', [GenreController::class, 'update']);
 Route::delete('genres/{id}', [GenreController::class, 'destroy']);
 
+// language
 
+Route::post('language', [LanguageController::class, 'store']);
+Route::put('language/{id}', [LanguageController::class, 'update']);
+Route::delete('language/{id}', [LanguageController::class, 'destroy']);
+
+//singer
+Route::post('artist', [LanguageController::class, 'store']);
+Route::put('artist/{id}', [LanguageController::class, 'update']);
+Route::delete('artist/{id}', [LanguageController::class, 'destroy']);
+Route::get('artists', [SingerController::class, 'getAllArtists']);
+Route::get('artists/{id}', [SingerController::class, 'getArtist']);
 
 
 
