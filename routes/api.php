@@ -20,6 +20,9 @@ use App\Http\Controllers\GenreController;
 
 Route::middleware('auth:sanctum')->group(function () {
 Route::post('updateProfile', [UserController::class, 'updateProfile']);
+Route::post('like', [MusicController::class,'like']);
+Route::post('like_album', [MusicController::class,'likeAlbum']);
+Route::post('like_singer', [MusicController::class,'likeSinger']);
 Route::post('/user/songs', [UserSongController::class, 'SongListen']);
 Route::get('/user_songs', [UserSongController::class, 'getUserSong']);
    
@@ -69,6 +72,9 @@ Route::get('trending_daily',[MusicController::class,'trendingDaily']);
 Route::get('trending_albums',[MusicController::class,'trendingAlbums']);
 Route::get('superhit_songs',[MusicController::class,'superhitSongs']);
 Route::get('superhit_albums',[MusicController::class,'superhitAlbums']);
+
+Route::get('playlists',[PlaylistController::class ,'getAllPlaylist']);
+Route::get('playlists/{id}',[PlaylistController::class ,'getPlaylist']);
 
 
 
