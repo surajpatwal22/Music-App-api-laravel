@@ -76,6 +76,8 @@ Route::get('superhit_albums',[MusicController::class,'superhitAlbums']);
 Route::get('playlists',[PlaylistController::class ,'getAllPlaylist']);
 Route::get('playlists/{id}',[PlaylistController::class ,'getPlaylist']);
 
+Route::post('/user/playlists', [PlaylistController::class, 'createPlaylist']);
+
 
 
 

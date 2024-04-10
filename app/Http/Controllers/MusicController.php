@@ -736,6 +736,26 @@ class MusicController extends Controller
 
     }
 
+    public function createPlaylist(Request $request)
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'songs' => 'required|array', 
+        'songs.*' => 'exists:songs,id', 
+    ]);
+
+    $playlist = new Playlist();
+    $playlist->name = $request->input('name');
+    $playlist->user_id = auth()->user()->id;
+    $playlist->save();
+
+    // Attach songs to the playlist
+    $playlist->songs()->attach($request->input('songs'));
+
+    return response()->json(['message' => 'Playlist created successfully', 'playlist' => $playlist], 201);
+}
+
+
     
 
 
