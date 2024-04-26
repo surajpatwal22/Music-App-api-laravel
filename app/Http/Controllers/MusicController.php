@@ -54,6 +54,7 @@ class MusicController extends Controller
                 $newUser = User::create([
                     'phone' => $request->mobile_number,
                     'email' => $request->email,
+                    'is_admin' => 0
                 ]);
 
                 $token = $newUser->createToken('Personal Access Token', ['expires' => now()->addDays(7)])->plainTextToken;
@@ -72,6 +73,7 @@ class MusicController extends Controller
                 $token = $user->createToken('Personal Access Token', ['expires' => now()->addDays(7)])->plainTextToken;
                 $user->device_id = $request->device_id;
                 $user->api_token = $token;
+                
                 $user->save();
 
                 return response()->json([
@@ -318,6 +320,25 @@ class MusicController extends Controller
         }
     }
 
+    public function getAllMood()
+    {
+        $mood = Mood::with(['songs'])->orderBy("created_at", "asc")->get();
+        return response()->json([
+            "success" => true,
+            "mood" => $mood,
+            "status" => 200
+        ], 200);
+    }
+
+    public function newRealeaseSongs() {
+        $songs = Song::with(['singer', 'mood', 'language', 'genre', 'musicDirector', 'album'])->where('status','active')->orderBy("release_date", "desc")->get();
+        return response()->json([
+            "success" => true,
+            "songs" => $songs
+        ], 200);
+    }
+
+   
     public function getAllDirector()
     {
 
@@ -341,7 +362,6 @@ class MusicController extends Controller
 
     public function getSongsByMood($mood)
     {
-        // $mood = $request->query('mood');
         $moodId = Mood::where('name', $mood)->value('id');
         // dd($moodId);
         if ($moodId == null) {
@@ -356,8 +376,8 @@ class MusicController extends Controller
             if (count($songs) <= 0) {
                 return response()->json([
                     "Message" => "There are no songs in this mood.",
-                    "Success" => false,
-                    'status' => 404
+                    "Success" => true,
+                    'status' => 200
                 ]);
             }
             return response()->json([
@@ -377,17 +397,17 @@ class MusicController extends Controller
         if ($languageName == null) {
             return response()->json([
                 "Message" => "No Language found with this name",
-                "Success" => false,
-                'status' => 400
-            ], 400);
+                "Success" => true,
+                'status' => 200
+            ], 200);
         } else {
-            $songs = Song::where('language_id', $languageName->id)->get();
+            $songs = Song::where('language_id', $languageName->id)->orderBy("created_at", "desc")->get();
 
             if (count($songs) <= 0) {
                 return response()->json([
                     "Message" => "There are no songs in this language.",
-                    "Success" => false,
-                    'status' => 404
+                    "Success" => true,
+                    'status' => 200
                 ]);
             }
             return response()->json([
@@ -409,7 +429,7 @@ class MusicController extends Controller
                 'status' => 400
             ], 400);
         } else {
-            $songs = Song::where('genre_id', $genereName->id)->get();
+            $songs = Song::where('genre_id', $genereName->id)->orderBy("created_at", "desc")->get();
 
             if (count($songs) <= 0) {
                 return response()->json([
@@ -449,16 +469,19 @@ class MusicController extends Controller
             ->groupBy('song_id')
             ->orderByDesc('total')
             ->get();
-
+        $data=[];
         foreach ($trendingSongs as $trendingSong) {
-            $song = Song::where('id', $trendingSong->song_id)->get();
-            $trendingSong->setAttribute('song_details', $song);
+            $song = Song::where('id', $trendingSong->song_id)->first();
+            if($song != null){
+                array_push($data,$song);
+            }
+            // $trendingSong->setAttribute('song_details', $song);
         }
         return response()->json([
             'message' => 'Trending songs retrieved successfully',
             'status' => 200,
             'success' => true,
-            'trendingSongs' => $trendingSongs
+            'trendingSongs' => $data
         ], 200);
     }
 
@@ -471,16 +494,19 @@ class MusicController extends Controller
             ->groupBy('song_id')
             ->orderByDesc('total')
             ->get();
-
+            $data=[];
         foreach ($trendingSongs as $trendingSong) {
-            $song = Song::where('id', $trendingSong->song_id)->get();
-            $trendingSong->setAttribute('song_details', $song);
+            $song = Song::where('id', $trendingSong->song_id)->first();
+            if($song != null){
+                array_push($data,$song);
+            }
+            // $trendingSong->setAttribute('song_details', $song);
         }
         return response()->json([
             'message' => ' Daily Trending songs retrieved successfully',
             'status' => 200,
             'success' => true,
-            'trendingSongs' => $trendingSongs
+            'trendingSongs' => $data
         ], 200);
     }
 
@@ -491,16 +517,19 @@ class MusicController extends Controller
                 ->groupBy('song_id')
                 ->orderByDesc('total')
                 ->get();
-
+            $data =[];
             foreach ($superhitSongs as $superhitsong) {
-                $song = Song::where('id', $superhitsong->song_id)->get();
-                $superhitsong->setAttribute('song_details', $song);
+                $song = Song::where('id', $superhitsong->song_id)->first();
+                if($song != null){
+                    array_push($data,$song);
+                }
+                // $superhitsong->setAttribute('song_details', $song);
             }
             return response()->json([
                 'message' => 'Superhit songs retrieved successfully',
                 'status' => 200,
                 'success' => true,
-                'superhitsongs' => $superhitSongs
+                'superhitsongs' => $data
             ], 200);
         } catch (Exception $e) {
             return response()->json([
@@ -525,14 +554,10 @@ class MusicController extends Controller
         $trendingAlbums = [];
         foreach ($trendingAlbums1 as $key => $val) {
             $album = Album::where('id', $key)->first();
-            $count = count($val);
-            array_push($trendingAlbums, [
-                "album" => $album,
-                "total" => $count
-            ]);
+            array_push($trendingAlbums ,$album );
         }
         return response()->json([
-            'message' => 'Trending songs retrieved successfully',
+            'message' => 'Trending albums retrieved successfully',
             'status' => 200,
             'success' => true,
             'trendingAlbums' => $trendingAlbums
@@ -551,10 +576,7 @@ class MusicController extends Controller
         foreach ($superhitAlbums1 as $key => $val) {
             $album = Album::where('id', $key)->first();
             $count = count($val);
-            array_push($superhitAlbums, [
-                "album" => $album,
-                "total" => $count
-            ]);
+            array_push($superhitAlbums, $album);
         }
         return response()->json([
             'message' => 'Superhit albums retrieved successfully',
@@ -611,8 +633,6 @@ class MusicController extends Controller
     {
         try {
             $keyword = $request->keyword;
-
-            
             $songs = Song::where('title', 'like', "%$keyword%")->get();
             $albums = Album::where('name', 'like', "%$keyword%")->get();
             $singers = Singer::where('name', 'like', "%$keyword%")->get();
@@ -736,26 +756,243 @@ class MusicController extends Controller
 
     }
 
-    public function createPlaylist(Request $request)
-{
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'songs' => 'required|array', 
-        'songs.*' => 'exists:songs,id', 
-    ]);
 
-    $playlist = new Playlist();
-    $playlist->name = $request->input('name');
-    $playlist->user_id = auth()->user()->id;
-    $playlist->save();
+    public function getMedia(Request $request){
+        $id = $request->input('album_id') ?? $request->input('playlist_id') ?? $request->input('artist_id');
+    
+        if ($id) {
+            if ($request->has('album_id')) {
+                $type = 'album';
+                $media = Album::with(['songs'])->find($id);
+            } elseif ($request->has('playlist_id')) {
+                $type = 'playlist';
+                $media = Playlist::with(['songs'])->find($id);
+            } elseif ($request->has('artist_id')) {
+                $type = 'artist';
+                $media = Singer::with(['songs'])->find($id);
+            } else {
+                return response()->json(['error' => 'Invalid media type'], 400);
+            }
+    
+            if ($media) {
+                return response()->json([
+                    "success" => true,
+                    "data" => $media,
+                    "status" => 200,
+                ], 200);
+            } else {
+                return response()->json(['error' => ucfirst($type) . ' not found'], 404);
+            }
+        } else {
+            return response()->json(['error' => 'ID parameter missing'], 400);
+        }
+    }
 
-    // Attach songs to the playlist
-    $playlist->songs()->attach($request->input('songs'));
+    public function userPlaylist(Request $request)
+    {
+        $validator = Validator::make(request()->all(), [
+            'name' => 'required|unique:playlists,playlist_name',
+            'description' => 'required',
+            'songs' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => $validator->errors(),
+                'status' => 404,
+                'success' => false
+            ]);
+        } else {
+            $string = $request->songs;
+            $cleanstring = str_replace([ "[", ']' ], "", $string);
+            $songs =explode(',',$cleanstring);
+            // return $songs;
+            $user = Auth::user();
 
-    return response()->json(['message' => 'Playlist created successfully', 'playlist' => $playlist], 201);
-}
+            if ($request->photo) {
+                $file = $request->photo;
+                $imageName = time() . '.' . $file->getClientOriginalName();
+                $imageName = str_replace(' ', '_', $imageName);
+                $imagePath = public_path() . '/public/storage/photos/playlist/';
+                $file->move($imagePath, $imageName);
+            } else {
+                return response()->json([
+                    'message' => 'Image field is required!',
+                    'status' => 400,
+                    'success' => false
+                ], 400);
+            }
+
+            $notify = Notification::create([
+                'note' => 'New playlist '.$request->title . 'added by admin',
+                'status' => 'active',
+                'note_img' => 'public/storage/photos/notification/' . $imageName,
+            ]);
+
+            $playlist = Playlist::create([
+                'user_id' => $user->id,
+                'playlist_name' => $request->name,
+                'status' => 'active',
+                'description' => $request->description,
+                'is_top_chart' => $request->topchart,
+                'image' => 'public/storage/photos/playlist/' . $imageName 
+            ]);
+        
+           
+            $playlist1 = Playlist::find($playlist->id);
+            foreach ($songs as $song) {
+               
+             $playlist1->songs()->attach($song);
+            }
+            // if($notify){
+            //     $users = User::where('status','active')->get('device_id');
+            //     foreach ($users as $user) {
+            //         $token = $user->device_id;
+            //         $notification = [
+            //             'title' => 'Ring Music',
+            //             'body' => $user->name.' added new playlist '.$request->name,
+            //         ];
+            //         firebasenotification($token,$notification);
+            //     }
+            // }
+
+            // if($playlist1 && $notify)
+            if ($playlist1) {
+                return response()->json([
+                    'message' => 'playlist created successfully',
+                    "success" => true,
+                    "playlist" => $playlist,
+                    'status' => 200
+                ], 200);
+            } else {
+                return response()->json([
+                    'message' => 'playlist not created ',
+                    "success" => false,
+                    'status' => 404
+                ], 404);
+            }
 
 
+        }
+
+
+    }
+
+    public function getUserPlaylists()
+    {
+    $user = Auth::user();
+    if (!$user) {
+        return response()->json([
+            'message' => 'User not authenticated',
+            'success' => false,
+            'status' => 401,
+        ], 401);
+    }
+    $playlists = Playlist::with('songs')->where('user_id','=',$user->id)->get();
+    // $playlists = $user->playlists()->with('songs')->get();
+
+    return response()->json([
+        'message' => 'User playlists fetched successfully',
+        'success' => true,
+        'playlists' => $playlists,
+        'status' => 200,
+    ], 200);
+    }
+
+    public function addSong(Request $request)
+    {
+    $user = Auth::user();
+    if (!$user) {
+        return response()->json([
+            'message' => 'User not authenticated',
+            'success' => false,
+            'status' => 401,
+        ], 401);
+    }
+    $playlist_id = $request->playlist_id;
+    $song_id = $request->song_id;
+    
+    $playlist = Playlist::where('id',$playlist_id)->first();
+    
+    if (!$playlist) {
+        return response()->json([
+            'message' => 'Playlist not found',
+            'success' => false,
+            'status' => 404,
+        ], 404);
+    }
+    if ($playlist->songs()->where('song_id', $song_id)->exists()) {
+        return response()->json([
+            'message' => 'Song already exists in the playlist',
+            'success' => false,
+            'status' => 422,
+        ], 422);
+    }
+    if($playlist != null){
+        if($playlist->user_id = $user->id){
+            $playlist->songs()->attach($song_id);
+
+            return response()->json([
+                'message' => 'Song added to playlist successfully',
+                'success' => true,
+                'status' => 200,
+            ], 200);
+        }
+        
+    }
+
+  
+    }
+
+    public function removeSong(Request $request)
+    {
+    $user = Auth::user();
+    if (!$user) {
+        return response()->json([
+            'message' => 'User not authenticated',
+            'success' => false,
+            'status' => 401,
+        ], 401);
+    }
+    
+    $playlist_id = $request->playlist_id;
+    $song_id = $request->song_id;
+    
+    $playlist = Playlist::where('id',$playlist_id)->first();
+    if (!$playlist) {
+        return response()->json([
+            'message' => 'Playlist not found',
+            'success' => false,
+            'status' => 404,
+        ], 404);
+    }
+
+    if (!$playlist->songs()->where('song_id', $song_id)->exists()) {
+        return response()->json([
+            'message' => 'Song not found in the playlist',
+            'success' => false,
+            'status' => 404,
+        ], 404);
+    }
+
+    if($playlist != null){
+        if($playlist->user_id = $user->id){
+            $playlist->songs()->detach($song_id);
+
+            return response()->json([
+                'message' => 'Song removed from playlist successfully',
+                'success' => true,
+                'status' => 200,
+            ], 200);
+        }
+        
+    }
+  
+    }
+
+
+
+
+    
     
 
 
