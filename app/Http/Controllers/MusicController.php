@@ -12,12 +12,14 @@ use App\Models\Like;
 use App\Models\Mood;
 use App\Models\MusicDirector;
 use App\Models\Playlist;
+use App\Models\PlaylistsCategory;
 use App\Models\Singer;
 use App\Models\SingerLike;
 use App\Models\Song;
 use App\Models\User;
 use App\Models\UserSong;
 use App\Models\Notification;
+use App\Models\SongBanner;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -211,6 +213,7 @@ class MusicController extends Controller
             }
         }
     }
+    
 
     public function likeAlbum(Request $request)
     {
@@ -758,26 +761,45 @@ class MusicController extends Controller
 
 
     public function getMedia(Request $request){
-        $id = $request->input('album_id') ?? $request->input('playlist_id') ?? $request->input('artist_id');
+        $id = $request->input('album_id') ?? $request->input('playlist_id') ?? $request->input('artist_id') ?? $request->input('mood_id');
     
         if ($id) {
             if ($request->has('album_id')) {
                 $type = 'album';
-                $media = Album::with(['songs'])->find($id);
+                $media = Album::with(['songs','songs.singer','songs.album','songs.mood','songs.genre','songs.label','songs.musicDirector'])->find($id);
             } elseif ($request->has('playlist_id')) {
                 $type = 'playlist';
-                $media = Playlist::with(['songs'])->find($id);
+                $media = Playlist::with(['songs', 'songs.singer','songs.album','songs.mood','songs.genre','songs.label','songs.musicDirector'])->find($id);
             } elseif ($request->has('artist_id')) {
                 $type = 'artist';
-                $media = Singer::with(['songs'])->find($id);
+                $media = Singer::with(['songs','songs.album','songs.mood','songs.genre','songs.label','songs.musicDirector'])->find($id);
+            } elseif ($request->has('mood_id')) {
+                $type = 'mood';
+                $media = Mood::with(['songs','songs.singer','songs.album','songs.genre','songs.label','songs.musicDirector'])->find($id);
             } else {
                 return response()->json(['error' => 'Invalid media type'], 400);
+            }
+            $songsList = $media->songs;
+            $count = $songsList->count();
+            $singerIds = collect($songsList)->pluck('singer_id');
+    
+            $singers = Singer::whereIn('id', $singerIds)->get(['id', 'name']);
+           
+           
+            foreach ($songsList as &$song) {
+                $singer = $singers->firstWhere('id', $song['singer_id']);
+                if ($singer) {
+                    $song['singer_name'] = $singer['name'];
+                } else {
+                    $song['singer_name'] = 'Unknown';
+                }
             }
     
             if ($media) {
                 return response()->json([
                     "success" => true,
                     "data" => $media,
+                    'count' => $count,
                     "status" => 200,
                 ], 200);
             } else {
@@ -814,19 +836,19 @@ class MusicController extends Controller
                 $imageName = str_replace(' ', '_', $imageName);
                 $imagePath = public_path() . '/public/storage/photos/playlist/';
                 $file->move($imagePath, $imageName);
-            } else {
-                return response()->json([
-                    'message' => 'Image field is required!',
-                    'status' => 400,
-                    'success' => false
-                ], 400);
+                $imageFullPath = 'public/storage/photos/playlist/' . $imageName;
+            } 
+            else {
+                $imageFullPath = null;
             }
 
-            $notify = Notification::create([
-                'note' => 'New playlist '.$request->title . 'added by admin',
-                'status' => 'active',
-                'note_img' => 'public/storage/photos/notification/' . $imageName,
-            ]);
+            // $notify = Notification::create([
+            //     'note' => 'New playlist '.$request->title . 'added by admin',
+            //     'status' => 'active',
+            //     'note_img' => 'public/storage/photos/notification/' . $imageName,
+            // ]);
+            
+         
 
             $playlist = Playlist::create([
                 'user_id' => $user->id,
@@ -834,7 +856,7 @@ class MusicController extends Controller
                 'status' => 'active',
                 'description' => $request->description,
                 'is_top_chart' => $request->topchart,
-                'image' => 'public/storage/photos/playlist/' . $imageName 
+                'image' => $imageFullPath
             ]);
         
            
@@ -990,11 +1012,74 @@ class MusicController extends Controller
     }
 
 
+    public function getUserLikedSongs()
+    {
+    $user = Auth::user();
+    if (!$user) {
+        return response()->json([
+            'message' => 'User not authenticated',
+            'success' => false,
+            'status' => 401,
+        ], 401);
+    }
+    $songs = Like::with('song')->where('user_id','=',$user->id)->orderBy("created_at", "desc")->get();
 
+    return response()->json([
+        'message' => 'User Liked songs fetched successfully',
+        'success' => true,
+        'usersongs' => $songs,
+        'status' => 200,
+    ], 200);
+    }
 
-    
-    
+    public function getsongbanner()
+    {
+        $Banner = SongBanner::where('category','0')->orderBy("created_at", "asc")->get();
 
+        if ($Banner->count() == 0) {
+            return response()->json([
+                "message" => "No Banners Found",
+                "success" => true,
+                "status" => 200
+            ], 200);
+        }
+
+        return response()->json([
+            "message" => "Successfully Fetched Banners",
+            "success" => true,
+            "status" => 200 ,
+            "banner" => $Banner
+        ],200);
+    }
+
+    public function getalbumbanner()
+    {
+        $Banner = SongBanner::where('category','1')->orderBy("created_at", "asc")->get();
+
+        if ($Banner->count() == 0) {
+            return response()->json([
+                "message" => "No Banners Found",
+                "success" => true,
+                "status" => 200
+            ], 200);
+        }
+        
+        return response()->json([
+            "message" => "Successfully Fetched Banners",
+            "success" => true,
+            "status" => 200 ,
+            "banner" => $Banner
+        ],200);
+    }
+
+    public function getplaylistCategory(){
+        $playlistCat = PlaylistsCategory::with('playlist')->orderBy("created_at", "asc")->get();
+        return response()->json([
+            "success" => true,
+            "status" => 200 ,
+            "category" => $playlistCat
+        ],200);
+    }
 
 
 }
